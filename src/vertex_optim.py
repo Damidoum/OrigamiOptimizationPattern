@@ -20,6 +20,17 @@ class Boundary:
     min_angle: float  # minimum angle
     max_angle: float  # maximum angle
 
+    def __post_init__(self):
+        self.min_angle %= 2 * np.pi
+        self.max_angle %= 2 * np.pi
+
+    def apply(self, vertex):
+        if vertex[self.index].angle < self.min_angle:
+            return False
+        if vertex[self.index].angle > self.max_angle:
+            return False
+        return True
+
 
 @dataclass
 class DiffAngle:
@@ -27,6 +38,14 @@ class DiffAngle:
     index2: int  # index of the second angle
     min_diff = -float(np.inf)  # minimum difference between the two angles
     max_diff = float(np.inf)  # maximum difference between the two angles
+
+    def apply(self, vertex):
+        diff = (vertex[self.index1].angle - vertex[self.index2].angle) % 2 * np.pi
+        if diff < self.min_diff:
+            return False
+        if diff > self.max_diff:
+            return False
+        return True
 
 
 @dataclass
@@ -96,6 +115,18 @@ class Vertex:
     def __post_init__(self):
         self.branches = [Branch(angle, length) for angle, length in self.branches]
         self._sort()
+
+    def __getitem__(self, index: int) -> Branch:
+        return self.branches[index]
+
+    def __setitem__(self, index: int, value: Branch):
+        self.branches[index] = value
+
+    def __delitem__(self, index: int):
+        del self.branches[index]
+
+    def __len__(self) -> int:
+        return len(self.branches)
 
     def _sort(self):
         self.branches.sort(key=lambda x: x.angle)
@@ -175,8 +206,9 @@ if __name__ == "__main__":
     yoshimura_rotate = yoshimura.rotate(np.pi + 0.1)
     yoshimura_sym = yoshimura_rotate.symmetrize(np.pi)
     sym = Symmetry(np.pi)
-    print(sym.apply(yoshimura))
-    print(sym.apply(yoshimura_rotate))
+    bound = Boundary(0, 0, 0.09)
+    print(bound.apply(yoshimura))
+    print(bound.apply(yoshimura_rotate))
     ax = yoshimura_rotate.plot()
     yoshimura_sym.plot(color="blue", ax=ax)
     plt.show()

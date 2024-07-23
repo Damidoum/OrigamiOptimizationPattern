@@ -9,7 +9,7 @@ class Symmetry:
     symmetry_angle: float  # angle of symmetry
 
     def apply(self, vertex):
-        if vertex.rotate(self.symmetry_angle).is_angle_compatible(vertex):
+        if vertex.symmetrize(self.symmetry_angle).is_angle_compatible(vertex):
             return True
         return False
 
@@ -83,6 +83,9 @@ class Branch:
     angle: float
     length: float
 
+    def __post_init__(self):
+        self.angle %= 2 * np.pi
+
 
 @dataclass
 class Vertex:
@@ -92,9 +95,14 @@ class Vertex:
 
     def __post_init__(self):
         self.branches = [Branch(angle, length) for angle, length in self.branches]
+        self._sort()
+
+    def _sort(self):
+        self.branches.sort(key=lambda x: x.angle)
 
     def append_branch(self, branch):
         self.branches.append(branch)
+        self._sort()  # very non optimal should be changed later
 
     def rotate(self, angle: float):
         """Rotation of the vertex
@@ -115,10 +123,26 @@ class Vertex:
         """
         for branch in self.branches:
             branch.angle += angle
+            branch.angle %= 2 * np.pi
+        self._sort()
 
-    def is_angle_compatible(self, vertex2):
+    def symmetrize(self, symmetry_angle: float):
+        new_vertex = Vertex([], self.constraints, self.tesselation_compatibilities)
+        for branch in self.branches:
+            new_vertex.append_branch(
+                Branch(2 * symmetry_angle - branch.angle, branch.length)
+            )
+        return new_vertex
+
+    def _symmetrize(self, symmetry_angle: float):
+        for branch in self.branches:
+            branch.angle = 2 * symmetry_angle - branch.angle
+            branch.angle %= 2 * np.pi
+        self._sort()
+
+    def is_angle_compatible(self, vertex2, eps=1e-6):
         for branch1, branch2 in zip(self.branches, vertex2.branches):
-            if not branch1.angle == branch2.angle:
+            if not abs(branch1.angle - branch2.angle) < eps:
                 return False
         return True
 
@@ -148,7 +172,11 @@ if __name__ == "__main__":
         None,
         None,
     )
-    yoshimura_rotate = yoshimura.rotate(np.pi / 6)
-    ax = yoshimura.plot()
-    yoshimura_rotate.plot("blue", ax)
+    yoshimura_rotate = yoshimura.rotate(np.pi + 0.1)
+    yoshimura_sym = yoshimura_rotate.symmetrize(np.pi)
+    sym = Symmetry(np.pi)
+    print(sym.apply(yoshimura))
+    print(sym.apply(yoshimura_rotate))
+    ax = yoshimura_rotate.plot()
+    yoshimura_sym.plot(color="blue", ax=ax)
     plt.show()

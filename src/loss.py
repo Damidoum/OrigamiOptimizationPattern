@@ -1,10 +1,18 @@
 from vertex_optim import Vertex
 
 
-class loss:
+class Loss:
     def __init__(self, thereshold) -> None:
         self.loss = 0.0
         self.thereshold = thereshold
+
+    def __call__(self, vertex1: Vertex, vertex2: Vertex, offset: int = 0) -> float:
+        value = self.compute(vertex1, vertex2, offset)
+        self.reset()
+        return value
+
+    def reset(self):
+        self.loss = 0.0
 
     def compute(self, vertex1: Vertex, vertex2: Vertex, offset: int = 0) -> float:
         self.loss = 0.0
@@ -18,6 +26,3 @@ class loss:
             else:
                 self.loss += diff
         return self.loss
-
-    def __call__(self, vertex1: Vertex, vertex2: Vertex, offset: int = 0) -> float:
-        return self.compute(vertex1, vertex2, offset)

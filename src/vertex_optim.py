@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 
@@ -109,15 +109,29 @@ class Branch:
 @dataclass
 class Vertex:
     branches: List[Tuple[float, float]]
-    constraints: dict
-    tesselation_compatibilities: List[Translation]
+    constraints: dict = None
+    tesselation_compatibilities: List[Translation] = None
 
     def __post_init__(self):
-        self.branches = [Branch(angle, length) for angle, length in self.branches]
+        if len(self) == 0 or not isinstance(self.branches[0], Branch):
+            self.branches = [Branch(angle, length) for angle, length in self.branches]
         self._sort()
 
-    def __getitem__(self, index: int) -> Branch:
-        return self.branches[index]
+    def __getitem__(
+        self, index: Union[int, List[int], tuple, slice]
+    ) -> Union[Branch, None]:
+        if isinstance(index, int):
+            return Vertex(self.branches[index])
+        if isinstance(index, list):
+            return Vertex([self.branches[i] for i in index])
+        if isinstance(index, tuple):
+            return Vertex([self.branches[i] for i in index])
+        if isinstance(index, slice):
+            return Vertex(
+                [self.branches[i] for i in range(index.start, index.stop, index.step)]
+            )
+        print("Invalid index")
+        return None
 
     def __setitem__(self, index: int, value: Branch):
         self.branches[index] = value
@@ -127,6 +141,11 @@ class Vertex:
 
     def __len__(self) -> int:
         return len(self.branches)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Vertex):
+            return self.branches == other.branches
+        return False
 
     def _sort(self):
         self.branches.sort(key=lambda x: x.angle)
@@ -211,4 +230,4 @@ if __name__ == "__main__":
     print(bound.apply(yoshimura_rotate))
     ax = yoshimura_rotate.plot()
     yoshimura_sym.plot(color="blue", ax=ax)
-    plt.show()
+    # plt.show()

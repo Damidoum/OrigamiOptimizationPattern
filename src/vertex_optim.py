@@ -2,6 +2,7 @@ import numpy as np
 from typing import List, Tuple, Union
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
+from utils import Utils
 
 
 @dataclass
@@ -25,9 +26,9 @@ class Boundary:
         self.max_angle %= 2 * np.pi
 
     def apply(self, vertex):
-        if vertex[self.index].angle < self.min_angle:
+        if vertex.branches[self.index].angle < self.min_angle:
             return False
-        if vertex[self.index].angle > self.max_angle:
+        if vertex.branches[self.index].angle > self.max_angle:
             return False
         return True
 
@@ -40,7 +41,11 @@ class DiffAngle:
     max_diff = float(np.inf)  # maximum difference between the two angles
 
     def apply(self, vertex):
-        diff = (vertex[self.index1].angle - vertex[self.index2].angle) % 2 * np.pi
+        diff = (
+            (vertex.branches[self.index1].angle - vertex.branches[self.index2].angle)
+            % 2
+            * np.pi
+        )
         if diff < self.min_diff:
             return False
         if diff > self.max_diff:
@@ -108,28 +113,35 @@ class Branch:
 
 @dataclass
 class Vertex:
-    branches: List[Tuple[float, float]]
+    branches: Union[
+        Tuple[float, float], List[Tuple[float, float]], Branch, List[Branch]
+    ]
     constraints: dict = None
     tesselation_compatibilities: List[Translation] = None
 
     def __post_init__(self):
-        if len(self) == 0 or not isinstance(self.branches[0], Branch):
-            self.branches = [Branch(angle, length) for angle, length in self.branches]
+        self.branches = Utils.ensure_list(self.branches)
+        if (
+            len(self) != 0
+            and isinstance(self.branches[0], tuple)
+            and len(self.branches[0]) == 2
+        ):
+            self.branches = [Branch(*branch_param) for branch_param in self.branches]
         self._sort()
 
     def __getitem__(
         self, index: Union[int, List[int], tuple, slice]
-    ) -> Union[Branch, None]:
+    ) -> Union[List[Branch], None]:
         if isinstance(index, int):
-            return Vertex(self.branches[index])
+            return self.branches[index]
         if isinstance(index, list):
-            return Vertex([self.branches[i] for i in index])
+            return [self.branches[i] for i in index]
         if isinstance(index, tuple):
-            return Vertex([self.branches[i] for i in index])
+            return [self.branches[i] for i in index]
         if isinstance(index, slice):
-            return Vertex(
-                [self.branches[i] for i in range(index.start, index.stop, index.step)]
-            )
+            return [
+                self.branches[i] for i in range(index.start, index.stop, index.step)
+            ]
         print("Invalid index")
         return None
 
@@ -146,6 +158,22 @@ class Vertex:
         if isinstance(other, Vertex):
             return self.branches == other.branches
         return False
+
+    def extract_branches(
+        self, index: Union[int, List[int], tuple, slice]
+    ) -> Union[Branch, None]:
+        if isinstance(index, int):
+            return Vertex(self.branches[index])
+        if isinstance(index, list):
+            return Vertex([self.branches[i] for i in index])
+        if isinstance(index, tuple):
+            return Vertex([self.branches[i] for i in index])
+        if isinstance(index, slice):
+            return Vertex(
+                [self.branches[i] for i in range(index.start, index.stop, index.step)]
+            )
+        print("Invalid index")
+        return None
 
     def _sort(self):
         self.branches.sort(key=lambda x: x.angle)
@@ -230,4 +258,4 @@ if __name__ == "__main__":
     print(bound.apply(yoshimura_rotate))
     ax = yoshimura_rotate.plot()
     yoshimura_sym.plot(color="blue", ax=ax)
-    # plt.show()
+    plt.show()

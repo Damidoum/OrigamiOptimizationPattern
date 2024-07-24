@@ -1,6 +1,5 @@
 from typing import Callable, Tuple
 import numpy as np
-from vertex_optim import Vertex
 
 
 def vectorize(func: Callable) -> Callable:
@@ -17,9 +16,7 @@ def vectorize(func: Callable) -> Callable:
 
 class Utils:
     @staticmethod
-    def detect_smaller_vertex(
-        vertex1: Vertex, vertex2: Vertex
-    ) -> Tuple[Vertex, Vertex]:
+    def detect_smaller_vertex(vertex1, vertex2) -> Tuple:
         """Detect the smaller of two vertices.
 
         Args:
@@ -49,9 +46,7 @@ class Utils:
         return np.sign(angle1 - angle2) * min(diff, 360 - diff)
 
     @staticmethod
-    def distance_between_vertex(
-        vertex1: Vertex, vertex2: Vertex, offset: int = 0
-    ) -> Tuple[float]:
+    def distance_between_vertex(vertex1, vertex2, offset: int = 0) -> Tuple[float]:
         """Compute the distance between two vertices.
 
         Args:
@@ -68,3 +63,11 @@ class Utils:
             Utils.angle_difference(vertex1[i + offset].angle, vertex2[i].angle)
             for i in range(len(vertex1))
         )
+
+    @staticmethod
+    def ensure_list(obj: any) -> list:
+        if obj is None:
+            return []
+        if isinstance(obj, list):
+            return obj
+        return [obj]

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from typing import List, Tuple, Union
 from dataclasses import dataclass
@@ -129,6 +130,12 @@ class Vertex:
             self.branches = [Branch(*branch_param) for branch_param in self.branches]
         self._sort()
 
+    def __rpr__(self):
+        return f"Vertex({",".join([str(np.degrees(branch.angle)) for branch in self.branches])})"
+
+    def __str__(self):
+        return f"Vertex({",".join([str(round(np.degrees(branch.angle), 1)) for branch in self.branches])})"
+
     def __getitem__(
         self, index: Union[int, List[int], tuple, slice]
     ) -> Union[List[Branch], None]:
@@ -161,7 +168,7 @@ class Vertex:
 
     def extract_branches(
         self, index: Union[int, List[int], tuple, slice]
-    ) -> Union[Branch, None]:
+    ) -> Union[List[Branch], None]:
         if isinstance(index, int):
             return Vertex(self.branches[index])
         if isinstance(index, list):
@@ -182,7 +189,7 @@ class Vertex:
         self.branches.append(branch)
         self._sort()  # very non optimal should be changed later
 
-    def rotate(self, angle: float):
+    def rotate(self, angle: float) -> Vertex:
         """Rotation of the vertex
 
         Args:
@@ -204,7 +211,7 @@ class Vertex:
             branch.angle %= 2 * np.pi
         self._sort()
 
-    def symmetrize(self, symmetry_angle: float):
+    def symmetrize(self, symmetry_angle: float) -> Vertex:
         new_vertex = Vertex([], self.constraints, self.tesselation_compatibilities)
         for branch in self.branches:
             new_vertex.append_branch(
@@ -224,13 +231,13 @@ class Vertex:
                 return False
         return True
 
-    def plot(self, color="red", ax=None):
+    def plot(self, color: str = "red", alpha: int = 1, linestyle: str = "-", ax=None):
         if ax is None:
             _, ax = plt.subplots()
         for branch in self.branches:
             x = [0, branch.length * np.cos(branch.angle)]
             y = [0, branch.length * np.sin(branch.angle)]
-            ax.plot(x, y, marker="o", color=color)
+            ax.plot(x, y, marker="o", color=color, alpha=alpha, linestyle=linestyle)
 
         ax.set_aspect("equal", "box")
         plt.grid(False)

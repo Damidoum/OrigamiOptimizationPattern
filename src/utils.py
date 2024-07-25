@@ -46,7 +46,7 @@ class Utils:
         return np.sign(angle1 - angle2) * min(diff, 360 - diff)
 
     @staticmethod
-    def distance_between_vertex(vertex1, vertex2, offset: int = 0) -> Tuple[float]:
+    def distance_between_vertex(vertex1, vertex2, offset: int) -> Tuple[float]:
         """Compute the distance between two vertices.
 
         Args:
@@ -58,9 +58,11 @@ class Utils:
             Tuple[float]: List of distance between the two vertices.
         """
         assert len(vertex1) == len(vertex2)
-
+        print(offset)
         return list(
-            Utils.angle_difference(vertex1[i + offset].angle, vertex2[i].angle)
+            Utils.angle_difference(
+                vertex1[(i + offset) % len(vertex1)].angle, vertex2[i].angle
+            )
             for i in range(len(vertex1))
         )
 

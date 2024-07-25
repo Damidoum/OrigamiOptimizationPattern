@@ -17,12 +17,13 @@ class Loss:
     def compute(self, vertex1: Vertex, vertex2: Vertex, offset: int = 0) -> float:
         self.loss = 0.0
         assert len(vertex1) == len(vertex2)
+        N = len(vertex1)
         for i in range(len(vertex1)):
             diff = abs(
                 vertex1[i].angle - vertex2[(i + offset) % len(vertex2)].angle
             )  # offset is used to compare the vertices with different starting points
-            if diff > self.thereshold:
+            if diff > self.thereshold + 1e-6:
                 self.loss += 1
             else:
-                self.loss += diff / self.thereshold
+                self.loss += (diff / self.thereshold) * 1 / N
         return self.loss

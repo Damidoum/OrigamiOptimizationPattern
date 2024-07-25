@@ -27,6 +27,9 @@ class Algorithm:
         
         def __eq__(self, other: Algorithm.Output) -> bool:
             return self.vertex == other.vertex
+        
+        def is_close_to(self, other: Algorithm.Output, threshold: float = 2 * PI / 360 * 5) -> bool:
+            return self.vertex.is_close_to(other.vertex, threshold)
 
         def convert_to_vertex(self, vertex: Vertex, already_rotated: bool = False) -> Vertex:
             if not already_rotated:
@@ -41,7 +44,7 @@ class Algorithm:
 
         def isInOutputList(self, output_list: List[Algorithm.Output], threshold: float = 2 * PI / 360 * 5) -> Tuple[bool, int]:
             for i, output in enumerate(output_list):
-                if output == self:
+                if self.is_close_to(output, threshold):
                     return True, i
             return False, None
 
@@ -73,7 +76,7 @@ class Algorithm:
             new_output = self.Output(
                 global_rotation,
                 [
-                    angle if abs(angle) <= self.threshold else 0
+                    angle if abs(angle) <= self.threshold + 1e-6 else 0
                     for angle in Utils.distance_between_vertex(
                         subset_larger_vertex, rotated_smaller_vertex, offset
                     )

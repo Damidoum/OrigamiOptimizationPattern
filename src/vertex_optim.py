@@ -1,5 +1,6 @@
 from __future__ import annotations
-import numpy as np
+from numpy import pi as PI
+from numpy import degrees, cos, sin
 from typing import List, Tuple, Union
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
@@ -38,14 +39,14 @@ class Boundary:
 class DiffAngle:
     index1: int  # index of the first angle
     index2: int  # index of the second angle
-    min_diff = -float(np.inf)  # minimum difference between the two angles
-    max_diff = float(np.inf)  # maximum difference between the two angles
+    min_diff = -float("inf")  # minimum difference between the two angles
+    max_diff = float("inf")  # maximum difference between the two angles
 
     def apply(self, vertex):
         diff = (
             (vertex.branches[self.index1].angle - vertex.branches[self.index2].angle)
             % 2
-            * np.pi
+            * PI
         )
         if diff < self.min_diff:
             return False
@@ -109,21 +110,29 @@ class Branch:
     length: float
 
     def __post_init__(self):
-        self.angle %= 2 * np.pi
+        self.angle %= 2 * PI 
     
-    def __eq__(self, other: Branch, threshold: float = 1e-6) -> bool:
+    def __eq__(self, other: Branch)  -> bool:
         if isinstance(other, Branch):
-            if abs(self.angle - other.angle) < threshold:
+            if abs(self.angle - other.angle) < 1e-6:
                 return True
             else:
                 return False
         return False
 
     def __repr__(self):
-        return f"branch({round(np.degrees(self.angle), 2), self.length})"
+        return f"branch({round(degrees(self.angle), 2), self.length})"
     
     def __str__(self):
-        return f"branch({round(np.degrees(self.angle), 2), self.length})"
+        return f"branch({round(degrees(self.angle), 2), self.length})"
+
+    def is_close_to(self, other: Branch, threshold: float = 2 * PI / 360 * 5):
+        if isinstance(other, Branch):
+            if abs(self.angle - other.angle) < threshold:
+                return True
+            else:
+                return False
+        return False
 
 
 @dataclass
@@ -145,10 +154,10 @@ class Vertex:
         self._sort()
 
     def __repr__(self):
-        return f"Vertex({",".join([str(round(np.degrees(branch.angle), 1)) for branch in self.branches])})"
+        return f"Vertex({",".join([str(round(degrees(branch.angle), 1)) for branch in self.branches])})"
 
     def __str__(self):
-        return f"Vertex({",".join([str(round(np.degrees(branch.angle), 1)) for branch in self.branches])})"
+        return f"Vertex({",".join([str(round(degrees(branch.angle), 1)) for branch in self.branches])})"
 
     def __getitem__(
         self, index: Union[int, List[int], tuple, slice]
@@ -175,10 +184,19 @@ class Vertex:
     def __len__(self) -> int:
         return len(self.branches)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other)  -> bool:
         if isinstance(other, Vertex):
             return self.branches == other.branches
         return False
+    
+    def is_close_to(self, other: Vertex, threshold: float = 2 * PI / 360 * 5):
+        if isinstance(other, Vertex):
+            if len(self) != len(other):
+                return False
+            for branch1, branch2 in zip(self.branches, other.branches):
+                if not branch1.is_close_to(branch2, threshold):
+                    return False
+            return True
 
     def extract_branches(
         self, index: Union[int, List[int], tuple, slice]
@@ -222,7 +240,7 @@ class Vertex:
         """
         for branch in self.branches:
             branch.angle += angle
-            branch.angle %= 2 * np.pi
+            branch.angle %= 2 * PI 
         self._sort()
 
     def symmetrize(self, symmetry_angle: float) -> Vertex:
@@ -236,7 +254,7 @@ class Vertex:
     def _symmetrize(self, symmetry_angle: float):
         for branch in self.branches:
             branch.angle = 2 * symmetry_angle - branch.angle
-            branch.angle %= 2 * np.pi
+            branch.angle %= 2 * PI
         self._sort()
 
     def is_angle_compatible(self, vertex2, eps=1e-6):
@@ -249,8 +267,8 @@ class Vertex:
         if ax is None:
             _, ax = plt.subplots()
         for branch in self.branches:
-            x = [0, branch.length * np.cos(branch.angle)]
-            y = [0, branch.length * np.sin(branch.angle)]
+            x = [0, branch.length * cos(branch.angle)]
+            y = [0, branch.length * sin(branch.angle)]
             ax.plot(x, y, marker="o", color=color, alpha=alpha, linestyle=linestyle)
 
         ax.set_aspect("equal", "box")
@@ -262,18 +280,18 @@ if __name__ == "__main__":
     yoshimura = Vertex(
         [
             (0, 1),
-            (np.pi / 3, 1),
-            (np.pi - np.pi / 3, 1),
-            (np.pi, 1),
-            (np.pi + np.pi / 3, 1),
-            (-np.pi / 3, 1),
+            (PI / 3, 1),
+            (PI - PI / 3, 1),
+            (PI, 1),
+            (PI + PI / 3, 1),
+            (-PI / 3, 1),
         ],
         None,
         None,
     )
-    yoshimura_rotate = yoshimura.rotate(np.pi + 0.1)
-    yoshimura_sym = yoshimura_rotate.symmetrize(np.pi)
-    sym = Symmetry(np.pi)
+    yoshimura_rotate = yoshimura.rotate(PI + 0.1)
+    yoshimura_sym = yoshimura_rotate.symmetrize(PI)
+    sym = Symmetry(PI)
     bound = Boundary(0, 0, 0.09)
     print(bound.apply(yoshimura))
     print(bound.apply(yoshimura_rotate))

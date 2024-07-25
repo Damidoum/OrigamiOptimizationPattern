@@ -23,7 +23,7 @@ def plot_vertex(
 def plot_vertices_side_by_side(
     vertices,
     compare_vertex=None,
-    spacing=5,
+    spacing=2,
     color: List[str] = ["red", "blue", "green"],
     alpha=1,
     linestyle="-",
@@ -68,8 +68,8 @@ def plot_vertices_side_by_side(
                         linestyle="dashed",
                     )
 
-    # ax.set_aspect("equal", "box")
-    ax.set_aspect(5)
+    ax.set_aspect("equal", "box")
+    # ax.set_aspect(5)
     plt.grid(True)
     plt.title("Vertices Plot")
     plt.xlabel("X-axis")
@@ -78,24 +78,24 @@ def plot_vertices_side_by_side(
 
 
 if __name__ == "__main__":
-    algo = Algorithm(threshold=2 * PI / 360 * 60, number_of_output=5)
+    algo = Algorithm(threshold=2 * PI / 360 * 20, number_of_output=10)
     yoshimura = Vertex(
         [
-            (PI / 3, 1),
+            (PI / 4, 1),
             (PI / 2, 1),
-            (PI - PI / 3, 1),
-            (PI + PI / 3, 1),
+            (PI - PI / 4, 1),
+            (PI + PI / 4, 1),
             (-PI / 2, 1),
-            (-PI / 3, 1),
+            (-PI / 4, 1),
         ],
         None,
         None,
     )
     miura = Vertex(
         [
-            (PI / 3 + 0.1, 1),
+            (PI / 6, 1),
             (PI / 2, 1),
-            (PI - PI / 3 - 0.1, 1),
+            (PI - PI / 6, 1),
             (-PI / 2, 1),
         ],
         None,
@@ -104,9 +104,6 @@ if __name__ == "__main__":
     output = algo(yoshimura, miura)
     print(output)
     output = [out.vertex for out in output if out.vertex is not None]
-    for out in output:
-        print(out)
-        print("----")
     plot_vertices_side_by_side(
         output,
         compare_vertex=None,
@@ -114,4 +111,3 @@ if __name__ == "__main__":
         alpha=0.15,
         linestyle="--",
     )
-    plot_vertex([miura, output], color=["red", "blue", "black", "green"])

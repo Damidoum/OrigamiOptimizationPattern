@@ -1,6 +1,6 @@
 from __future__ import annotations
 from numpy import pi as PI
-from numpy import degrees, cos, sin
+from numpy import degrees, radians, cos, sin
 from typing import List, Tuple, Union
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
@@ -24,8 +24,8 @@ class Boundary:
     max_angle: float  # maximum angle
 
     def __post_init__(self):
-        self.min_angle %= 2 * np.pi
-        self.max_angle %= 2 * np.pi
+        self.min_angle %= 2 * PI 
+        self.max_angle %= 2 * PI
 
     def apply(self, vertex):
         if vertex.branches[self.index].angle < self.min_angle:
@@ -60,9 +60,9 @@ class Rotation:
     angle: float  # Angle de rotation en degrés
 
     def apply(self, point: Tuple[float, float]) -> Tuple[float, float]:
-        radians = np.radians(self.angle)
-        cos_theta = np.cos(radians)
-        sin_theta = np.sin(radians)
+        radians = radians(self.angle)
+        cos_theta = cos(radians)
+        sin_theta = sin(radians)
         x, y = point
         x_new = cos_theta * x - sin_theta * y
         y_new = sin_theta * x + cos_theta * y

@@ -58,7 +58,6 @@ class Utils:
             Tuple[float]: List of distance between the two vertices.
         """
         assert len(vertex1) == len(vertex2)
-        print(offset)
         return list(
             Utils.angle_difference(
                 vertex1[(i + offset) % len(vertex1)].angle, vertex2[i].angle

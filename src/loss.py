@@ -24,5 +24,5 @@ class Loss:
             if diff > self.thereshold:
                 self.loss += 1
             else:
-                self.loss += diff
+                self.loss += diff / self.thereshold
         return self.loss

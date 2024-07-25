@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from numpy import pi as PI
 from typing import Any, List
@@ -16,36 +17,31 @@ class Algorithm:
         rotation: float = 0
         angle_adjustments: List[float] = field(default_factory=list)
         cost: float = float("inf")
+        vertex: Vertex = None
 
         def __str__(self) -> str:
             return f"Rotation: {degrees(self.rotation):.2f}, Angle adjustments: {", ".join([str(round(degrees(angle), 2)) for angle in self.angle_adjustments])}, Cost: {self.cost:.3f}"
 
         def __repr__(self) -> str:
             return self.__str__()
+        
+        def __eq__(self, other: Algorithm.Output) -> bool:
+            return self.vertex == other.vertex
 
-        def convert_to_vertex(self, vertex: Vertex) -> Vertex:
-            new_vertex = vertex.rotate(self.rotation)
+        def convert_to_vertex(self, vertex: Vertex, already_rotated: bool = False) -> Vertex:
+            if not already_rotated:
+                new_vertex = vertex.rotate(self.rotation)
+            else:
+                new_vertex = copy.deepcopy(vertex)
             for i, angle in enumerate(self.angle_adjustments):
                 new_vertex[i].angle += angle
+            self.vertex = new_vertex
+            self.vertex._sort()
             return new_vertex
 
-        def __compare_angle_adjustments(self, output: List[float], eps: float) -> bool:
-            if len(output.angle_adjustments) != len(self.angle_adjustments):
-                return False
-            for i, angle in enumerate(output.angle_adjustments):
-                if abs(angle - self.angle_adjustments[i]) > eps:
-                    return False
-            return True
-
-        def isInOutputList(
-            self, output_list: Algorithm.Output, eps: float = 1e-6
-        ) -> bool:
+        def isInOutputList(self, output_list: List[Algorithm.Output], threshold: float = 2 * PI / 360 * 5) -> bool:
             for output in output_list:
-                if (
-                    self.rotation == output.rotation
-                    and self.__compare_angle_adjustments(output, eps)
-                    and abs(self.cost - output.cost) < eps
-                ):
+                if output == self:
                     return True
             return False
 
@@ -84,21 +80,9 @@ class Algorithm:
                 ],
                 cost,
             )
+            new_output.convert_to_vertex(rotated_smaller_vertex, already_rotated=True)
             if not new_output.isInOutputList(self.output):
-                print("Filling the output!")
                 self.output[-1] = new_output
-            else:
-                print("Already in the output!")
-            """
-            self.output[-1].rotation = global_rotation
-            self.output[-1].angle_adjustments = [
-                angle if abs(angle) <= self.threshold else 0
-                for angle in Utils.distance_between_vertex(
-                    subset_larger_vertex, rotated_smaller_vertex, offset
-                )
-            ]
-            self.output[-1].cost = cost
-            """
             self.__sort_output()
 
     def optimize_pattern(self, vertex1: Vertex, vertex2: Vertex) -> List[Output]:

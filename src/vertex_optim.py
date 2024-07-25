@@ -110,6 +110,20 @@ class Branch:
 
     def __post_init__(self):
         self.angle %= 2 * np.pi
+    
+    def __eq__(self, other: Branch, threshold: float = 1e-6) -> bool:
+        if isinstance(other, Branch):
+            if abs(self.angle - other.angle) < threshold:
+                return True
+            else:
+                return False
+        return False
+
+    def __repr__(self):
+        return f"branch({round(np.degrees(self.angle), 2), self.length})"
+    
+    def __str__(self):
+        return f"branch({round(np.degrees(self.angle), 2), self.length})"
 
 
 @dataclass
@@ -130,8 +144,8 @@ class Vertex:
             self.branches = [Branch(*branch_param) for branch_param in self.branches]
         self._sort()
 
-    def __rpr__(self):
-        return f"Vertex({",".join([str(np.degrees(branch.angle)) for branch in self.branches])})"
+    def __repr__(self):
+        return f"Vertex({",".join([str(round(np.degrees(branch.angle), 1)) for branch in self.branches])})"
 
     def __str__(self):
         return f"Vertex({",".join([str(round(np.degrees(branch.angle), 1)) for branch in self.branches])})"

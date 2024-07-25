@@ -22,6 +22,7 @@ def plot_vertex(
 
 def plot_vertices_side_by_side(
     vertices,
+    compare_vertex=None,
     spacing=5,
     color: List[str] = ["red", "blue", "green"],
     alpha=1,
@@ -37,7 +38,7 @@ def plot_vertices_side_by_side(
         alpha (int): Transparence des lignes.
         linestyle (str): Style de ligne.
     """
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(5, 5))
 
     # Tracer chaque Vertex
     for i, vertex in enumerate(vertices):
@@ -54,8 +55,21 @@ def plot_vertices_side_by_side(
                 alpha=alpha,
                 linestyle=linestyle,
             )
+            if compare_vertex is not None:
+                for branch2 in compare_vertex.branches:
+                    x = [offset, offset + branch2.length * cos(branch2.angle)]
+                    y = [0, branch2.length * sin(branch2.angle)]
+                    ax.plot(
+                        x,
+                        y,
+                        marker="o",
+                        color="grey",
+                        alpha=0.15,
+                        linestyle="dashed",
+                    )
 
-    ax.set_aspect("equal", "box")
+    # ax.set_aspect("equal", "box")
+    ax.set_aspect(5)
     plt.grid(True)
     plt.title("Vertices Plot")
     plt.xlabel("X-axis")
@@ -64,7 +78,7 @@ def plot_vertices_side_by_side(
 
 
 if __name__ == "__main__":
-    algo = Algorithm(threshold=2 * PI / 360 * 60, number_of_output=10)
+    algo = Algorithm(threshold=2 * PI / 360 * 60, number_of_output=5)
     yoshimura = Vertex(
         [
             (PI / 3, 1),
@@ -88,18 +102,16 @@ if __name__ == "__main__":
         None,
     )
     output = algo(yoshimura, miura)
-    output1 = output[0].convert_to_vertex(miura)
-    output2 = output[1].convert_to_vertex(miura)
     print(output)
-    output_vertex = [output[i].convert_to_vertex(miura) for i in range(10)]
-    for out in output_vertex:
+    output = [out.vertex for out in output if out.vertex is not None]
+    for out in output:
         print(out)
         print("----")
     plot_vertices_side_by_side(
-        output_vertex,
+        output,
+        compare_vertex=None,
         color=["red", "blue", "black", "green", "yellow"],
         alpha=0.15,
         linestyle="--",
     )
-    # print(output2)
-    # plot_vertex([miura, output2], color=["red", "blue", "black", "green"])
+    plot_vertex([miura, output], color=["red", "blue", "black", "green"])

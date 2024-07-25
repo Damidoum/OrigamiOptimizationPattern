@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 from numpy import pi as PI
-from typing import Any, List
+from typing import List, Tuple
 from vertex_optim import Vertex, Symmetry, Boundary, DiffAngle, Transformation
 from itertools import combinations
 from loss import Loss
@@ -39,11 +39,11 @@ class Algorithm:
             self.vertex._sort()
             return new_vertex
 
-        def isInOutputList(self, output_list: List[Algorithm.Output], threshold: float = 2 * PI / 360 * 5) -> bool:
-            for output in output_list:
+        def isInOutputList(self, output_list: List[Algorithm.Output], threshold: float = 2 * PI / 360 * 5) -> Tuple[bool, int]:
+            for i, output in enumerate(output_list):
                 if output == self:
-                    return True
-            return False
+                    return True, i
+            return False, None
 
     def __init__(self, threshold: float = PI / 3, number_of_output: int = 1) -> None:
         self.threshold = threshold
@@ -81,8 +81,11 @@ class Algorithm:
                 cost,
             )
             new_output.convert_to_vertex(rotated_smaller_vertex, already_rotated=True)
-            if not new_output.isInOutputList(self.output):
+            is_in_output, same_vertex_index = new_output.isInOutputList(self.output)
+            if not is_in_output: 
                 self.output[-1] = new_output
+            elif new_output.cost < self.output[same_vertex_index].cost:
+                self.output[same_vertex_index] = new_output
             self.__sort_output()
 
     def optimize_pattern(self, vertex1: Vertex, vertex2: Vertex) -> List[Output]:

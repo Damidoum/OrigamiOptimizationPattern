@@ -67,7 +67,7 @@ class Algorithm:
         global_rotation: float,
         subset: List[int],
         offset: int,
-    ) -> bool:
+    ) -> None:
         subset_larger_vertex = larger_vertex.extract_branches(
             subset
         )  # extract subset vertex
@@ -84,6 +84,8 @@ class Algorithm:
                 cost,
             )
             new_output.convert_to_vertex(rotated_smaller_vertex, already_rotated=True)
+            if not new_output.vertex.check_constraints():
+                return
             is_in_output, same_vertex_index = new_output.isInOutputList(self.output)
             if not is_in_output: 
                 self.output[-1] = new_output

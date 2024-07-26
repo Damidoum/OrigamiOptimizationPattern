@@ -78,7 +78,7 @@ def plot_vertices_side_by_side(
 
 
 if __name__ == "__main__":
-    algo = Algorithm(threshold=2 * PI / 360 * 20, number_of_output=10)
+    algo = Algorithm(threshold=2 * PI / 360 * 30, number_of_output=5)
     yoshimura = Vertex(
         [
             (PI / 4, 1),
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             (PI - PI / 6, 1),
             (-PI / 2, 1),
         ],
-        DiffAngle(0, 1, PI / 3, PI / 3),
+        [DiffAngle(1, 3, PI, PI), DiffAngle(0, 2, 0, PI)],
         None,
     )
     output = algo(yoshimura, miura)

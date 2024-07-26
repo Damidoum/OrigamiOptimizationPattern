@@ -32,7 +32,7 @@ class Boundary:
         return f"Boundary({self.index}, {round(degrees(self.min_angle), 1)}, {round(degrees(self.max_angle), 1)})"
     
     def __str__(self):
-        self.__str__()
+        return self.__repr__()
 
     def apply(self, vertex):
         if vertex.branches[self.index].angle < self.min_angle:
@@ -53,17 +53,22 @@ class DiffAngle:
         return f"DiffAngle({self.index1}, {self.index2}, {round(degrees(self.min_diff), 1)}, {round(degrees(self.max_diff), 1)})"
     
     def __str__(self):
-        self.__repr__()
+        return self.__repr__()
+    
+    def __sort_index(self):
+        if self.index1 > self.index2:
+            self.index1, self.index2 = self.index2, self.index1
 
     def apply(self, vertex):
-        diff = (
+        self.__sort_index()
+        diff = abs(
             (vertex.branches[self.index1].angle - vertex.branches[self.index2].angle)
-            % 2
-            * PI
+            % (2 * PI)
         )
-        if diff < self.min_diff:
+        diff = min(diff, 2 * PI - diff)
+        if diff < self.min_diff - 1e-6: # 1e-6 is used to avoid floating point errors
             return False
-        if diff > self.max_diff:
+        if diff > self.max_diff + 1e-6: # 1e-6 is used to avoid floating point errors
             return False
         return True
 
@@ -235,6 +240,12 @@ class Vertex:
         print("Invalid index")
         return None
 
+    def check_constraints(self) -> bool:
+        for constraint in self.constraints:
+            if not constraint.apply(self):
+                return False
+        return True
+
     def _sort(self):
         self.branches.sort(key=lambda x: x.angle)
     
@@ -324,14 +335,18 @@ if __name__ == "__main__":
         DiffAngle(1, 4, PI, PI),
         None,
     )
-    yoshimura_rotate = yoshimura.rotate(2 * PI / 3)
-    print(yoshimura)
-    print(yoshimura_rotate)
-    # yoshimura_sym = yoshimura_rotate.symmetrize(PI)
-    # sym = Symmetry(PI)
-    # bound = Boundary(0, 0, 0.09)
-    # print(bound.apply(yoshimura))
-    # print(bound.apply(yoshimura_rotate))
-    ax = yoshimura_rotate.plot()
-    # yoshimura_sym.plot(color="blue", ax=ax)
-    # plt.show()
+    miura = Vertex(
+        [
+            (PI / 6, 1),
+            (PI / 2, 1),
+            (PI - PI / 6, 1),
+            (-PI / 2, 1),
+        ],
+        DiffAngle(1, 3, PI, PI),
+        None,
+    )
+    miura_rotate = miura.rotate(PI )
+    print(miura_rotate.constraints[0].apply(miura_rotate))
+    ax = miura.plot()
+    miura_rotate.plot(color="blue", ax = ax)
+    plt.show()

@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from vertex_optim import Vertex
+from vertex_optim import Vertex, Symmetry, Boundary, DiffAngle
 from algo import Algorithm
 from numpy import pi as PI
 from typing import List
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             (PI - PI / 6, 1),
             (-PI / 2, 1),
         ],
-        None,
+        DiffAngle(0, 1, PI / 3, PI / 3),
         None,
     )
     output = algo(yoshimura, miura)

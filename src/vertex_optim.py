@@ -1,6 +1,7 @@
 from __future__ import annotations
 from numpy import pi as PI
-from numpy import degrees, radians, cos, sin
+from numpy import degrees, cos, sin 
+from numpy import radians as rad
 from typing import List, Tuple, Union
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
@@ -26,6 +27,12 @@ class Boundary:
     def __post_init__(self):
         self.min_angle %= 2 * PI 
         self.max_angle %= 2 * PI
+    
+    def __repr__(self):
+        return f"Boundary({self.index}, {round(degrees(self.min_angle), 1)}, {round(degrees(self.max_angle), 1)})"
+    
+    def __str__(self):
+        self.__str__()
 
     def apply(self, vertex):
         if vertex.branches[self.index].angle < self.min_angle:
@@ -39,8 +46,14 @@ class Boundary:
 class DiffAngle:
     index1: int  # index of the first angle
     index2: int  # index of the second angle
-    min_diff = -float("inf")  # minimum difference between the two angles
-    max_diff = float("inf")  # maximum difference between the two angles
+    min_diff: float = -float("inf")  # minimum difference between the two angles
+    max_diff: float = float("inf")  # maximum difference between the two angles
+
+    def __repr__(self):
+        return f"DiffAngle({self.index1}, {self.index2}, {round(degrees(self.min_diff), 1)}, {round(degrees(self.max_diff), 1)})"
+    
+    def __str__(self):
+        self.__repr__()
 
     def apply(self, vertex):
         diff = (
@@ -60,7 +73,7 @@ class Rotation:
     angle: float  # Angle de rotation en degrés
 
     def apply(self, point: Tuple[float, float]) -> Tuple[float, float]:
-        radians = radians(self.angle)
+        radians = rad(self.angle)
         cos_theta = cos(radians)
         sin_theta = sin(radians)
         x, y = point
@@ -140,7 +153,7 @@ class Vertex:
     branches: Union[
         Tuple[float, float], List[Tuple[float, float]], Branch, List[Branch]
     ]
-    constraints: dict = None
+    constraints: List = None
     tesselation_compatibilities: List[Translation] = None
 
     def __post_init__(self):
@@ -152,12 +165,13 @@ class Vertex:
         ):
             self.branches = [Branch(*branch_param) for branch_param in self.branches]
         self._sort()
+        self.constraints = Utils.ensure_list(self.constraints)
 
     def __repr__(self):
-        return f"Vertex({",".join([str(round(degrees(branch.angle), 1)) for branch in self.branches])})"
+        return f"Vertex({",".join([str(round(degrees(branch.angle), 1)) for branch in self.branches])}), constraints: {self.constraints}, tesselation_compatibilities: {self.tesselation_compatibilities}"
 
     def __str__(self):
-        return f"Vertex({",".join([str(round(degrees(branch.angle), 1)) for branch in self.branches])})"
+        return f"Vertex({",".join([str(round(degrees(branch.angle), 1)) for branch in self.branches])}), constraints: {self.constraints}, tesselation_compatibilities: {self.tesselation_compatibilities}"
 
     def __getitem__(
         self, index: Union[int, List[int], tuple, slice]
@@ -189,6 +203,13 @@ class Vertex:
             return self.branches == other.branches
         return False
     
+    def __find_offset(self, angle: float) -> int:
+        count = 0
+        for branch in self.branches[-1::-1]:
+            if branch.angle + angle >= 2 * PI - 1e-10:
+                count += 1
+        return count
+
     def is_close_to(self, other: Vertex, threshold: float = 2 * PI / 360 * 5):
         if isinstance(other, Vertex):
             if len(self) != len(other):
@@ -216,10 +237,12 @@ class Vertex:
 
     def _sort(self):
         self.branches.sort(key=lambda x: x.angle)
+    
 
-    def append_branch(self, branch):
+    def append_branch(self, branch, sort: bool = True):
         self.branches.append(branch)
-        self._sort()  # very non optimal should be changed later
+        if sort:
+            self._sort()  # very non optimal should be changed later
 
     def rotate(self, angle: float) -> Vertex:
         """Rotation of the vertex
@@ -227,9 +250,15 @@ class Vertex:
         Args:
             angle (float): angle of rotation in radians
         """
-        new_vertex = Vertex([], self.constraints, self.tesselation_compatibilities)
+        offset = self.__find_offset(angle)
+        new_vertex = Vertex([], [], [])
         for branch in self.branches:
-            new_vertex.append_branch(Branch(branch.angle + angle, branch.length))
+            new_vertex.append_branch(Branch(branch.angle + angle, branch.length), sort = False)
+        new_vertex.branches = new_vertex.branches[-offset:] + new_vertex.branches[:-offset]
+        if self.constraints is not None:
+            for constrain in self.constraints:
+                if isinstance(constrain, DiffAngle):
+                    new_vertex.constraints.append(DiffAngle((constrain.index1 + offset) % len(self), (constrain.index2 + offset) % len(self), constrain.min_diff, constrain.max_diff))
         return new_vertex
 
     def _rotate(self, angle: float):
@@ -238,10 +267,16 @@ class Vertex:
         Args:
             angle (float): angle of rotation in radians
         """
+        offset = self.__find_offset(angle)
         for branch in self.branches:
             branch.angle += angle
             branch.angle %= 2 * PI 
-        self._sort()
+        if self.constraints is not None:
+                for constraint in self.constraints:
+                    if isinstance(constraint, DiffAngle):
+                        constraint.index1 = (constraint.index1 + offset) % len(self)
+                        constraint.index1 = (constraint.index1 + offset) % len(self)
+        self.branches = self.branches[-offset:] + self.branches[:-offset]
 
     def symmetrize(self, symmetry_angle: float) -> Vertex:
         new_vertex = Vertex([], self.constraints, self.tesselation_compatibilities)
@@ -286,15 +321,17 @@ if __name__ == "__main__":
             (PI + PI / 3, 1),
             (-PI / 3, 1),
         ],
-        None,
+        DiffAngle(1, 4, PI, PI),
         None,
     )
-    yoshimura_rotate = yoshimura.rotate(PI + 0.1)
-    yoshimura_sym = yoshimura_rotate.symmetrize(PI)
-    sym = Symmetry(PI)
-    bound = Boundary(0, 0, 0.09)
-    print(bound.apply(yoshimura))
-    print(bound.apply(yoshimura_rotate))
+    yoshimura_rotate = yoshimura.rotate(2 * PI / 3)
+    print(yoshimura)
+    print(yoshimura_rotate)
+    # yoshimura_sym = yoshimura_rotate.symmetrize(PI)
+    # sym = Symmetry(PI)
+    # bound = Boundary(0, 0, 0.09)
+    # print(bound.apply(yoshimura))
+    # print(bound.apply(yoshimura_rotate))
     ax = yoshimura_rotate.plot()
-    yoshimura_sym.plot(color="blue", ax=ax)
-    plt.show()
+    # yoshimura_sym.plot(color="blue", ax=ax)
+    # plt.show()

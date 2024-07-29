@@ -267,9 +267,11 @@ class Vertex:
             new_vertex.append_branch(Branch(branch.angle + angle, branch.length), sort = False)
         new_vertex.branches = new_vertex.branches[-offset:] + new_vertex.branches[:-offset]
         if self.constraints is not None:
-            for constrain in self.constraints:
-                if isinstance(constrain, DiffAngle):
-                    new_vertex.constraints.append(DiffAngle((constrain.index1 + offset) % len(self), (constrain.index2 + offset) % len(self), constrain.min_diff, constrain.max_diff))
+            for constraint in self.constraints:
+                if isinstance(constraint, DiffAngle):
+                    new_vertex.constraints.append(DiffAngle((constraint.index1 + offset) % len(self), (constraint.index2 + offset) % len(self), constraint.min_diff, constraint.max_diff))
+                if isinstance(constraint, Symmetry):
+                    new_vertex.constraints.append(Symmetry(constraint.symmetry_angle + angle))
         return new_vertex
 
     def _rotate(self, angle: float):
@@ -293,8 +295,9 @@ class Vertex:
         new_vertex = Vertex([], self.constraints, self.tesselation_compatibilities)
         for branch in self.branches:
             new_vertex.append_branch(
-                Branch(2 * symmetry_angle - branch.angle, branch.length)
+                Branch(2 * symmetry_angle - branch.angle, branch.length), sort = False
             )
+        new_vertex._sort()
         return new_vertex
 
     def _symmetrize(self, symmetry_angle: float):
@@ -342,11 +345,13 @@ if __name__ == "__main__":
             (PI - PI / 6, 1),
             (-PI / 2, 1),
         ],
-        DiffAngle(1, 3, PI, PI),
+        [DiffAngle(1, 3, PI, PI), DiffAngle(0, 2, 0, PI), Symmetry(PI / 2)],
         None,
     )
-    miura_rotate = miura.rotate(PI )
-    print(miura_rotate.constraints[0].apply(miura_rotate))
-    ax = miura.plot()
-    miura_rotate.plot(color="blue", ax = ax)
+    test = miura.rotate(rad(105))
+    print(test)
+    constraint = Symmetry(PI / 2)
+    ax = test.plot()
+    test_sym = test.symmetrize(PI/2)
+    test_sym.plot(color="blue", ax = ax)
     plt.show()
